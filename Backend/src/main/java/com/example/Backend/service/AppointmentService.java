@@ -5,13 +5,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
+import com.example.Backend.dto.AppointmentBookingRequest;
+import com.example.Backend.dto.AppointmentDTO;
 import com.example.Backend.model.Appointment;
+import com.example.Backend.model.Staff;
 import com.example.Backend.model.TimeSlot;
 import com.example.Backend.repository.AppointmentRepository;
+import com.example.Backend.repository.StaffRepository;
 import com.example.Backend.repository.TimeSlotRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
 public class AppointmentService {
@@ -22,34 +26,88 @@ public class AppointmentService {
     @Autowired
     private TimeSlotRepository timeSlotRepo;
 
-    public Appointment bookAppointment(Appointment appointment) {
-        // Validate input
-        if (appointment == null) {
-            throw new IllegalArgumentException("Appointment object is null");
-        }
-        if (appointment.getId() == null) {
-            throw new IllegalArgumentException("Appointment ID is null");
+    @Autowired
+    private StaffRepository staffRepo;
+
+    public Appointment bookAppointment(AppointmentBookingRequest request) {
+        if (request == null || request.getTrainerId() == null || request.getStatus() == null ||
+                request.getDate() == null || request.getStartTime() == null || request.getEndTime() == null) {
+            throw new IllegalArgumentException("Invalid appointment data");
         }
 
-        // Check if the time slot exists and is available
-        Optional<TimeSlot> optionalSlot = timeSlotRepo.findByAppointmentId(appointment.getId());
-        if (optionalSlot.isEmpty()) {
-            throw new RuntimeException("Time slot not found for the given appointment ID");
+        Staff trainer = staffRepo.findById(request.getTrainerId())
+                .orElseThrow(() -> new RuntimeException("Trainer not found"));
+        Staff trainee = null;
+//        if (request.getTraineeId() != null) {
+//            trainee = staffRepo.findById(request.getTraineeId())
+//                    .orElseThrow(() -> new RuntimeException("Trainee not found"));
+//        }
+
+        // Check for overlapping slots for the same trainer
+        List<TimeSlot> overlappingSlots = timeSlotRepo
+                .findByDateAndAppointment_Trainer_NICAndStartTimeLessThanAndEndTimeGreaterThan(
+                        request.getDate(),
+                        request.getTrainerId(),
+                        request.getEndTime(),
+                        request.getStartTime()
+                );
+
+        boolean hasConflict = overlappingSlots.stream()
+                .anyMatch(slot -> slot.getStatus() == TimeSlot.SlotStatus.BOOKED
+                        || slot.getStatus() == TimeSlot.SlotStatus.IN_PROGRESS);
+
+        if (hasConflict) {
+            throw new RuntimeException("Trainer already has a booking in this time period");
         }
 
-        TimeSlot slot = optionalSlot.get();
-        if (slot.getStatus() != TimeSlot.SlotStatus.AVAILABLE) {
-            throw new RuntimeException("Time slot is not available");
+        // Find existing slot by date, startTime, and endTime
+        TimeSlot slot = timeSlotRepo.findByDateAndStartTimeAndEndTime(
+                request.getDate(), request.getStartTime(), request.getEndTime()
+        ).orElse(null);
+
+        if (slot != null) {
+            if (slot.getStatus() != TimeSlot.SlotStatus.AVAILABLE) {
+                throw new RuntimeException("Time slot is already booked");
+            }
+        } else {
+            // Create new slot if not exists
+            slot = new TimeSlot();
+            slot.setDate(request.getDate());
+            slot.setStartTime(request.getStartTime());
+            slot.setEndTime(request.getEndTime());
+            slot.setStatus(TimeSlot.SlotStatus.AVAILABLE);
+            slot = timeSlotRepo.save(slot);
         }
 
-        // Mark time slot as booked
+        Appointment appointment = new Appointment();
+        appointment.setTrainer(trainer);
+        appointment.setTrainee(trainee);
+        appointment.setStatus(Appointment.Status.valueOf(request.getStatus()));
+
+        Appointment savedAppointment = appointmentRepo.save(appointment);
+
+        slot.setAppointment(savedAppointment);
         slot.setStatus(TimeSlot.SlotStatus.BOOKED);
         timeSlotRepo.save(slot);
 
-        // Set appointment status to pending
-        appointment.setStatus(Appointment.Status.PENDING);
+        return savedAppointment;
+    }
 
-        return appointmentRepo.save(appointment);
+    public List<AppointmentDTO> getAllAppointments() {
+        return appointmentRepo.findAll().stream().map(appointment -> {
+            AppointmentDTO dto = new AppointmentDTO();
+            dto.setId(appointment.getId());
+            if (appointment.getTrainer() != null) {
+                dto.setTrainerId(appointment.getTrainer().getNIC());
+                dto.setTrainerName(appointment.getTrainer().getName());
+            }
+            if (appointment.getTrainee() != null) {
+                dto.setTraineeId(appointment.getTrainee().getNIC());
+                dto.setTraineeName(appointment.getTrainee().getName());
+            }
+            dto.setStatus(appointment.getStatus().name());
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     public List<Appointment> getAppointmentsForNextThreeDays() {
@@ -58,8 +116,8 @@ public class AppointmentService {
                 .filter(appointment -> {
                     Optional<TimeSlot> timeSlot = timeSlotRepo.findByAppointmentId(appointment.getId());
                     return timeSlot.isPresent() &&
-                           !timeSlot.get().getDate().isBefore(LocalDate.now()) &&
-                           !timeSlot.get().getDate().isAfter(LocalDate.now().plusDays(3));
+                            !timeSlot.get().getDate().isBefore(LocalDate.now()) &&
+                            !timeSlot.get().getDate().isAfter(LocalDate.now().plusDays(3));
                 })
                 .collect(Collectors.toList());
     }

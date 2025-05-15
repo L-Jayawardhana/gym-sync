@@ -2,6 +2,8 @@ package com.example.Backend.controller;
 
 import java.util.List;
 
+import com.example.Backend.dto.AppointmentBookingRequest;
+import com.example.Backend.dto.AppointmentDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,14 +28,13 @@ public class AppointmentController {
     private AppointmentService service;
 
     @PostMapping
-    public Appointment book(@RequestBody Appointment appointment) {
-        // Log the incoming request payload for debugging
-        System.out.println("Received appointment: " + appointment);
-        
-        if (appointment == null || appointment.getId() == null) {
-            throw new IllegalArgumentException("Invalid appointment data: Appointment object or ID is null");
-        }
-        return service.bookAppointment(appointment);
+    public Appointment book(@RequestBody AppointmentBookingRequest request) {
+        return service.bookAppointment(request);
+    }
+
+    @GetMapping
+    public List<AppointmentDTO> getAllAppointments() {
+        return service.getAllAppointments();
     }
 
     @GetMapping("/upcoming")
