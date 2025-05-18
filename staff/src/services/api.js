@@ -81,3 +81,4 @@ export const updateAppointmentStatus = async (id, status) => {
 export const getTrainersByRole = async () => {
   return axios.get(`${BASE_URL}/api/staff?role=TRAINER`)
 }
+export * from './ticketApi';

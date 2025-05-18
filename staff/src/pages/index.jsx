@@ -9,6 +9,8 @@ import Header from "../components/header.jsx"
 import Footer from "../components/Footer.jsx"
 import AppointmentList from "./Appointments/AppointmentList.jsx"
 import BookAppointment from "./Appointments/BookAppointment.jsx"
+import TicketList from  "./Tickets/TicketsAssignedPage.jsx"
+import RaiseTicket from "./Tickets/AddTicketForm.jsx"
 
 const StaffPage = () => {
   const location = useLocation()
@@ -154,6 +156,35 @@ const StaffPage = () => {
               </svg>
               <span className="whitespace-nowrap">Book Trainer</span>
             </Link>
+            <Link 
+              to="/staff/tickets" 
+              className={`px-4 sm:px-5 md:px-7 py-3 md:py-4 text-sm font-medium flex items-center transition-all duration-300 group ${
+                currentPath === '/tickets' 
+                  ? 'bg-gradient-to-r from-rose-700 to-rose-500 text-white shadow-md'
+                  : 'text-gray-700 hover:bg-rose-50 hover:text-rose-700'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <svg className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+              </svg>
+              <span className="whitespace-nowrap">View Tickets</span>
+            </Link>
+            <Link 
+              to="/staff/raise-ticket" 
+              className={`px-4 sm:px-5 md:px-7 py-3 md:py-4 text-sm font-medium flex items-center transition-all duration-300 group ${
+                currentPath === '/raise-ticket' 
+                  ? 'bg-gradient-to-r from-rose-700 to-rose-500 text-white shadow-md'
+                  : 'text-gray-700 hover:bg-rose-50 hover:text-rose-700'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <svg className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              <span className="whitespace-nowrap">Raise Ticket</span>
+            </Link>
+            
           </nav>
         </div>
       </div>
@@ -166,6 +197,8 @@ const StaffPage = () => {
             <Route path="update-staff/:nic" element={<UpdateStaff />} />
             <Route path="appointments" element={<AppointmentList />} />
             <Route path="book-appointment" element={<BookAppointment />} />
+            <Route path="tickets" element={<TicketList />} />
+            <Route path="raise-ticket" element={<RaiseTicket />} />
             <Route path="/" element={<Navigate to="/staff/dashboard" replace />} />
             <Route
               path="*"
