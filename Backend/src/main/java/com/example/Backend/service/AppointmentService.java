@@ -1,21 +1,22 @@
 package com.example.Backend.service;
 
+import com.example.Backend.dto.AppointmentBookingRequest;
+import com.example.Backend.dto.AppointmentDTO;
+import com.example.Backend.model.Appointment;
+import com.example.Backend.model.Member;
+import com.example.Backend.model.Staff;
+import com.example.Backend.model.TimeSlot;
+import com.example.Backend.repository.AppointmentRepository;
+import com.example.Backend.repository.MemberRepository;
+import com.example.Backend.repository.StaffRepository;
+import com.example.Backend.repository.TimeSlotRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import com.example.Backend.dto.AppointmentBookingRequest;
-import com.example.Backend.dto.AppointmentDTO;
-import com.example.Backend.model.Appointment;
-import com.example.Backend.model.Staff;
-import com.example.Backend.model.TimeSlot;
-import com.example.Backend.repository.AppointmentRepository;
-import com.example.Backend.repository.StaffRepository;
-import com.example.Backend.repository.TimeSlotRepository;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 @Service
 public class AppointmentService {
@@ -24,26 +25,33 @@ public class AppointmentService {
     private AppointmentRepository appointmentRepo;
 
     @Autowired
+    private MemberRepository memberRepo;
+
+    @Autowired
     private TimeSlotRepository timeSlotRepo;
 
     @Autowired
     private StaffRepository staffRepo;
 
-    public Appointment bookAppointment(AppointmentBookingRequest request) {
+    public String bookAppointment(AppointmentBookingRequest request) {
         if (request == null || request.getTrainerId() == null || request.getStatus() == null ||
                 request.getDate() == null || request.getStartTime() == null || request.getEndTime() == null) {
-            throw new IllegalArgumentException("Invalid appointment data");
+            return "Invalid appointment data";
         }
 
-        Staff trainer = staffRepo.findById(request.getTrainerId())
-                .orElseThrow(() -> new RuntimeException("Trainer not found"));
-        Staff trainee = null;
-//        if (request.getTraineeId() != null) {
-//            trainee = staffRepo.findById(request.getTraineeId())
-//                    .orElseThrow(() -> new RuntimeException("Trainee not found"));
-//        }
+        Staff trainer = staffRepo.findById(request.getTrainerId()).orElse(null);
+        if (trainer == null) {
+            return "Trainer not found";
+        }
 
-        // Check for overlapping slots for the same trainer
+        Member trainee = null;
+        if (request.getTraineeId() != null) {
+            trainee = memberRepo.findById(request.getTraineeId()).orElse(null);
+            if (trainee == null) {
+                return "Trainee not found";
+            }
+        }
+
         List<TimeSlot> overlappingSlots = timeSlotRepo
                 .findByDateAndAppointment_Trainer_NICAndStartTimeLessThanAndEndTimeGreaterThan(
                         request.getDate(),
@@ -57,20 +65,18 @@ public class AppointmentService {
                         || slot.getStatus() == TimeSlot.SlotStatus.IN_PROGRESS);
 
         if (hasConflict) {
-            throw new RuntimeException("Trainer already has a booking in this time period");
+            return "Trainer already has a booking in this time period";
         }
 
-        // Find existing slot by date, startTime, and endTime
         TimeSlot slot = timeSlotRepo.findByDateAndStartTimeAndEndTime(
                 request.getDate(), request.getStartTime(), request.getEndTime()
         ).orElse(null);
 
         if (slot != null) {
             if (slot.getStatus() != TimeSlot.SlotStatus.AVAILABLE) {
-                throw new RuntimeException("Time slot is already booked");
+                return "Time slot is already booked";
             }
         } else {
-            // Create new slot if not exists
             slot = new TimeSlot();
             slot.setDate(request.getDate());
             slot.setStartTime(request.getStartTime());
@@ -90,7 +96,7 @@ public class AppointmentService {
         slot.setStatus(TimeSlot.SlotStatus.BOOKED);
         timeSlotRepo.save(slot);
 
-        return savedAppointment;
+        return "Appointment Booked Successfully";
     }
 
     public List<AppointmentDTO> getAllAppointments() {
@@ -102,10 +108,17 @@ public class AppointmentService {
                 dto.setTrainerName(appointment.getTrainer().getName());
             }
             if (appointment.getTrainee() != null) {
-                dto.setTraineeId(appointment.getTrainee().getNIC());
-                dto.setTraineeName(appointment.getTrainee().getName());
+                dto.setTraineeId(appointment.getTrainee().getId());
+                dto.setTraineeName(appointment.getTrainee().getFirstName());
             }
+
             dto.setStatus(appointment.getStatus().name());
+            Optional<TimeSlot> timeSlot = timeSlotRepo.findByAppointmentId(appointment.getId());
+            if (timeSlot.isPresent()) {
+                dto.setStartTime(timeSlot.get().getStartTime());
+                dto.setEndTime(timeSlot.get().getEndTime());
+                dto.setDate(timeSlot.get().getDate());
+            }
             return dto;
         }).collect(Collectors.toList());
     }
@@ -136,5 +149,51 @@ public class AppointmentService {
             return appointmentRepo.save(app);
         }
         return null;
+    }
+
+    public List<AppointmentDTO> getAppointmentsByTrainerId(String trainerId) {
+        return appointmentRepo.findByTrainer_NIC(trainerId).stream().map(appointment -> {
+            AppointmentDTO dto = new AppointmentDTO();
+            dto.setId(appointment.getId());
+            if (appointment.getTrainer() != null) {
+                dto.setTrainerId(appointment.getTrainer().getNIC());
+                dto.setTrainerName(appointment.getTrainer().getName());
+            }
+            if (appointment.getTrainee() != null) {
+                dto.setTraineeId(appointment.getTrainee().getId());
+                dto.setTraineeName(appointment.getTrainee().getFirstName());
+            }
+            dto.setStatus(appointment.getStatus().name());
+            Optional<TimeSlot> timeSlot = timeSlotRepo.findByAppointmentId(appointment.getId());
+            if (timeSlot.isPresent()) {
+                dto.setStartTime(timeSlot.get().getStartTime());
+                dto.setEndTime(timeSlot.get().getEndTime());
+                dto.setDate(timeSlot.get().getDate());
+            }
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    public List<AppointmentDTO> getAppointmentsByTraineeId(Long traineeId) {
+        return appointmentRepo.findByTraineeId(traineeId).stream().map(appointment -> {
+            AppointmentDTO dto = new AppointmentDTO();
+            dto.setId(appointment.getId());
+            if (appointment.getTrainer() != null) {
+                dto.setTrainerId(appointment.getTrainer().getNIC());
+                dto.setTrainerName(appointment.getTrainer().getName());
+            }
+            if (appointment.getTrainee() != null) {
+                dto.setTraineeId(appointment.getTrainee().getId());
+                dto.setTraineeName(appointment.getTrainee().getFirstName());
+            }
+            dto.setStatus(appointment.getStatus().name());
+            Optional<TimeSlot> timeSlot = timeSlotRepo.findByAppointmentId(appointment.getId());
+            if (timeSlot.isPresent()) {
+                dto.setStartTime(timeSlot.get().getStartTime());
+                dto.setEndTime(timeSlot.get().getEndTime());
+                dto.setDate(timeSlot.get().getDate());
+            }
+            return dto;
+        }).collect(Collectors.toList());
     }
 }

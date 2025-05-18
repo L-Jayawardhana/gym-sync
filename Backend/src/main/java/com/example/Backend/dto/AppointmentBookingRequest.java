@@ -5,7 +5,7 @@ import java.time.LocalTime;
 
 public class AppointmentBookingRequest {
     private String trainerId;
-    private String traineeId;
+    private Long traineeId;
     private String status;
     private LocalDate date;
     private LocalTime startTime;
@@ -14,8 +14,8 @@ public class AppointmentBookingRequest {
     // Getters and setters
     public String getTrainerId() { return trainerId; }
     public void setTrainerId(String trainerId) { this.trainerId = trainerId; }
-    public String getTraineeId() { return traineeId; }
-    public void setTraineeId(String traineeId) { this.traineeId = traineeId; }
+    public Long getTraineeId() { return traineeId; }
+    public void setTraineeId(Long traineeId) { this.traineeId = traineeId; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public LocalDate getDate() { return date; }

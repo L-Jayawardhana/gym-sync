@@ -1,6 +1,5 @@
 package com.example.Backend.service;
 
-import com.example.Backend.model.Role;
 import com.example.Backend.model.Staff;
 import com.example.Backend.repository.StaffRepository;
 import org.mindrot.jbcrypt.BCrypt;
@@ -89,7 +88,7 @@ public class StaffService {
         Optional<Staff> staff = staffRepository.findById(NIC);
         if (staff.isPresent()) {
             Staff staff1 = staff.get();
-            Role role = Role.valueOf(newRole.toUpperCase());
+            Staff.Role role = Staff.Role.valueOf(newRole.toUpperCase());
             staff1.setRole(role);
             return staffRepository.save(staff1);
         } else {
@@ -136,5 +135,16 @@ public class StaffService {
         } else {
             return null;
         }
+    }
+
+    public Staff authenticateStaff(String nic, String password) {
+        Staff staff = staffRepository.findById(nic)
+                .orElseThrow(() -> new RuntimeException("Invalid NIC or password"));
+                
+        if (!BCrypt.checkpw(password, staff.getPassword())) {
+            throw new RuntimeException("Invalid NIC or password");
+        }
+        
+        return staff;
     }
 }
