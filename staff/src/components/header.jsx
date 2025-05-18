@@ -5,6 +5,7 @@ const Header = ({ scrolled }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userName, setUserName] = useState('');
   const [userRole, setUserRole] = useState('');
+  const [userProfileOpen, setUserProfileOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -14,6 +15,23 @@ const Header = ({ scrolled }) => {
     setUserName(name || '');
     setUserRole(role || '');
   }, []);
+
+  const getRoleBadgeClass = (role) => {
+    switch (role?.toLowerCase()) {
+      case 'admin':
+        return 'bg-blue-700 text-white';
+      case 'manager':
+        return 'bg-purple-700 text-white';
+      case 'trainer':
+        return 'bg-green-700 text-white';
+      case 'receptionist':
+        return 'bg-yellow-600 text-white';
+      case 'maintenance':
+        return 'bg-orange-600 text-white';
+      default:
+        return 'bg-rose-800 text-white';
+    }
+  };
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -68,19 +86,39 @@ const Header = ({ scrolled }) => {
             {userName && (
               <div className="flex items-center bg-rose-900 bg-opacity-40 rounded-lg px-3 py-1.5 text-white">
                 <span className="text-sm">Welcome, {userName}</span>
-                <span className="ml-2 text-xs bg-rose-800 px-2 py-0.5 rounded-full">{userRole}</span>
+                <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${getRoleBadgeClass(userRole)}`}>{userRole}</span>
               </div>
             )}
             
-            <button 
-              onClick={handleLogout}
-              className="flex items-center space-x-1 text-rose-100 hover:text-white transition-colors p-2 bg-rose-800 bg-opacity-40 rounded-lg hover:bg-opacity-60"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-              </svg>
-              <span>Logout</span>
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setUserProfileOpen(!userProfileOpen)}
+                className="flex items-center space-x-1 text-rose-100 hover:text-white transition-colors p-2 bg-rose-800 bg-opacity-40 rounded-lg hover:bg-opacity-60"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span>Profile</span>
+              </button>
+              
+              {userProfileOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                  <Link 
+                    to="/staff/profile" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setUserProfileOpen(false)}
+                  >
+                    View Profile
+                  </Link>
+                  <button 
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center md:hidden">
@@ -108,10 +146,20 @@ const Header = ({ scrolled }) => {
             {userName && (
               <div className="flex flex-col py-2 border-b border-rose-700 border-opacity-50">
                 <span className="text-white text-sm">Welcome, {userName}</span>
-                <span className="mt-1 text-xs bg-rose-900 inline-block w-fit px-2 py-0.5 rounded-full text-white">{userRole}</span>
+                <span className={`mt-1 text-xs inline-block w-fit px-2 py-0.5 rounded-full ${getRoleBadgeClass(userRole)}`}>{userRole}</span>
               </div>
             )}
             <div className="py-2">
+              <Link
+                to="/staff/profile"
+                className="flex w-full items-center py-2 text-rose-100 hover:text-white"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                View Profile
+              </Link>
               <button
                 onClick={handleLogout}
                 className="flex w-full items-center py-2 text-rose-100 hover:text-white"

@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from "react"
 import { Routes, Route, Link, Navigate, useLocation, useNavigate } from "react-router-dom"
-import StaffList from "./Staff/StaffList.jsx"
-import AddStaff from "./Staff/AddStaff.jsx"
-import UpdateStaff from "./Staff/UpdateStaff.jsx"
 import Header from "../components/header.jsx"
 import Footer from "../components/Footer.jsx"
 import AppointmentList from "./Appointments/AppointmentList.jsx"
 import BookAppointment from "./Appointments/BookAppointment.jsx"
-import TicketList from  "./Tickets/TicketsAssignedPage.jsx"
 import RaiseTicket from "./Tickets/AddTicketForm.jsx"
+import TicketsViewerPage from "./Tickets/TicketsViewerPage.jsx"
+import ProfilePage from "./Profile/ProfilePage.jsx"
+import { getTicketCountBystaffId } from "../services/ticketApi"
+import EquipmentList from "./Equipment/EquipmentList.jsx"
 
 const StaffPage = () => {
   const location = useLocation()
@@ -20,6 +20,8 @@ const StaffPage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userName, setUserName] = useState('')
   const [userRole, setUserRole] = useState('')
+  const [inProgressTicketCount, setInProgressTicketCount] = useState(0)
+  const [ticketCountLoading, setTicketCountLoading] = useState(true)
 
   useEffect(() => {
     // Check if user is logged in
@@ -35,6 +37,27 @@ const StaffPage = () => {
     setUserName(name || '')
     setUserRole(role || '')
 
+    // Fetch in-progress ticket count
+    const fetchInProgressTicketCount = async () => {
+      setTicketCountLoading(true)
+      try {
+        const staffId = localStorage.getItem('userId')
+        if (staffId) {
+          const response = await getTicketCountBystaffId(staffId)
+          setInProgressTicketCount(response.data || 0)
+        }
+      } catch (err) {
+        console.error('Error fetching in-progress tickets count:', err)
+      } finally {
+        setTicketCountLoading(false)
+      }
+    }
+    
+    fetchInProgressTicketCount()
+    
+    // Refresh ticket count every minute
+    const intervalId = setInterval(fetchInProgressTicketCount, 60 * 1000)
+
     const handleScroll = () => {
       const isScrolled = window.scrollY > 10
       if (isScrolled !== scrolled) {
@@ -45,6 +68,7 @@ const StaffPage = () => {
     document.addEventListener("scroll", handleScroll)
     return () => {
       document.removeEventListener("scroll", handleScroll)
+      clearInterval(intervalId)
     }
   }, [scrolled, navigate])
 
@@ -81,30 +105,20 @@ const StaffPage = () => {
           </div>
 
           <nav className={`flex flex-col md:flex-row ${mobileMenuOpen ? "block" : "hidden md:flex"}`}>
-            <Link
-              to="/staff/dashboard"
+            
+            <Link 
+              to="/staff/equipment-list" 
               className={`px-4 sm:px-5 md:px-7 py-3 md:py-4 text-sm font-medium flex items-center transition-all duration-300 group ${
-                currentPath === "/staff/dashboard" || currentPath === "/staff" || currentPath === "/staff/"
-                  ? "bg-gradient-to-r from-rose-700 to-rose-500 text-white shadow-md"
-                  : "text-gray-700 hover:bg-rose-50 hover:text-rose-700"
+                currentPath === '/equipment-list' || currentPath === '/' 
+                  ? 'bg-gradient-to-r from-rose-700 to-rose-500 text-white shadow-md'
+                  : 'text-gray-700 hover:bg-rose-50 hover:text-rose-700'
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              <svg
-                className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:rotate-12"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                ></path>
+              <svg className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
               </svg>
-              <span className="whitespace-nowrap">View Staff</span>
+              <span className="whitespace-nowrap">View Gym Equipment</span>
             </Link>
             <Link
               to="/staff/appointments"
@@ -131,35 +145,39 @@ const StaffPage = () => {
               </svg>
               <span className="whitespace-nowrap">Appointments</span>
             </Link>
-            <Link
-              to="/staff/book-appointment"
-              className={`px-4 sm:px-5 md:px-7 py-3 md:py-4 text-sm font-medium flex items-center transition-all duration-300 group ${
-                currentPath === "/staff/book-appointment"
-                  ? "bg-gradient-to-r from-rose-700 to-rose-500 text-white shadow-md"
-                  : "text-gray-700 hover:bg-blue-50 hover:text-rose-700"
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <svg
-                className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:rotate-45"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+            
+            {userRole !== 'TRAINER' && (
+              <Link
+                to="/staff/book-appointment"
+                className={`px-4 sm:px-5 md:px-7 py-3 md:py-4 text-sm font-medium flex items-center transition-all duration-300 group ${
+                  currentPath === "/staff/book-appointment"
+                    ? "bg-gradient-to-r from-rose-700 to-rose-500 text-white shadow-md"
+                    : "text-gray-700 hover:bg-blue-50 hover:text-rose-700"
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                ></path>
-              </svg>
-              <span className="whitespace-nowrap">Book Trainer</span>
-            </Link>
+                <svg
+                  className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:rotate-45"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  ></path>
+                </svg>
+                <span className="whitespace-nowrap">Book Trainer</span>
+              </Link>
+            )}
+            
             <Link 
               to="/staff/tickets" 
               className={`px-4 sm:px-5 md:px-7 py-3 md:py-4 text-sm font-medium flex items-center transition-all duration-300 group ${
-                currentPath === '/tickets' 
+                currentPath === '/staff/tickets' 
                   ? 'bg-gradient-to-r from-rose-700 to-rose-500 text-white shadow-md'
                   : 'text-gray-700 hover:bg-rose-50 hover:text-rose-700'
               }`}
@@ -169,22 +187,31 @@ const StaffPage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
               </svg>
               <span className="whitespace-nowrap">View Tickets</span>
+              {!ticketCountLoading && inProgressTicketCount > 0 && (
+                <span className={`ml-2 px-1.5 py-0.5 text-xs font-medium rounded-full min-w-[1.25rem] text-center ${
+                  currentPath === '/staff/tickets' 
+                    ? 'bg-white text-rose-700' 
+                    : 'bg-rose-500 text-white'
+                }`}>
+                  {inProgressTicketCount}
+                </span>
+              )}
             </Link>
+            
             <Link 
-              to="/staff/raise-ticket" 
+              to="/staff/raise-tickets" 
               className={`px-4 sm:px-5 md:px-7 py-3 md:py-4 text-sm font-medium flex items-center transition-all duration-300 group ${
-                currentPath === '/raise-ticket' 
-                  ? 'bg-gradient-to-r from-rose-700 to-rose-500 text-white shadow-md'
-                  : 'text-gray-700 hover:bg-rose-50 hover:text-rose-700'
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
+                  currentPath === "/staff/raise-tickets"
+                    ? "bg-gradient-to-r from-rose-700 to-rose-500 text-white shadow-md"
+                    : "text-gray-700 hover:bg-blue-50 hover:text-rose-700"
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
               <svg className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
               </svg>
               <span className="whitespace-nowrap">Raise Ticket</span>
             </Link>
-            
           </nav>
         </div>
       </div>
@@ -192,13 +219,13 @@ const StaffPage = () => {
       <div className="container mx-auto px-3 sm:px-4 md:px-6 pb-8 md:pb-12 relative mt-4 md:mt-6">
         <div className="glass-effect rounded-xl p-2 sm:p-4">
           <Routes>
-            <Route path="dashboard" element={<StaffList />} />
-            <Route path="add-staff" element={<AddStaff />} />
-            <Route path="update-staff/:nic" element={<UpdateStaff />} />
+            <Route path="dashboard" element={<AppointmentList />} />
+            <Route path="equipment-list" element={<EquipmentList />} />
             <Route path="appointments" element={<AppointmentList />} />
             <Route path="book-appointment" element={<BookAppointment />} />
-            <Route path="tickets" element={<TicketList />} />
-            <Route path="raise-ticket" element={<RaiseTicket />} />
+            <Route path="tickets" element={<TicketsViewerPage />} />
+            <Route path="raise-tickets" element={<RaiseTicket />} />
+            <Route path="profile" element={<ProfilePage />} />
             <Route path="/" element={<Navigate to="/staff/dashboard" replace />} />
             <Route
               path="*"

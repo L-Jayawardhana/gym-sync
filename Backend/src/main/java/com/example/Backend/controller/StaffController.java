@@ -20,7 +20,7 @@ public class StaffController {
 
     @Autowired
     private StaffService staffService;
-    
+
     @Autowired
     private JwtUtil jwtUtil;
 

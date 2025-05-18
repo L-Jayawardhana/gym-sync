@@ -76,6 +76,7 @@ const AppointmentList = () => {
       case "PENDING": return "bg-yellow-500"
       case "ACCEPTED": return "bg-green-500"
       case "REJECTED": return "bg-red-500"
+      case "COMPLETED": return "bg-blue-500"
       default: return "bg-gray-500"
     }
   }
@@ -122,6 +123,12 @@ const AppointmentList = () => {
                 className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
               >
                 Rejected
+              </button>
+              <button 
+                onClick={() => handleStatusChange(appointment.id, 'COMPLETED')}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-blue-600"
+              >
+                Completed
               </button>
               <button 
                 onClick={() => setEditingId(null)}

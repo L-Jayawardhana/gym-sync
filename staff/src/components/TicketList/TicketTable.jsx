@@ -7,11 +7,14 @@ const TicketTable = ({
   expandedTicket,
   setExpandedTicket,
   handleAssignTicket,
+  handleStatusChange,
+  handleUpdateStatus,
   selectedStatuses,
   loading,
   resetFilters,
   formatDate,
-  getTicketId
+  getTicketId,
+  showUpdateStatus = false
 }) => {
   const formatDateOnly = (dateString) => {
     if (!dateString) return 'N/A';
@@ -98,10 +101,13 @@ const TicketTable = ({
                       <TicketDetails 
                         ticket={ticket}
                         handleAssignTicket={handleAssignTicket}
+                        handleStatusChange={handleStatusChange}
+                        handleUpdateStatus={handleUpdateStatus}
                         selectedStatuses={selectedStatuses}
                         loading={loading}
                         getTicketId={getTicketId}
                         formatDate={formatDate}
+                        showUpdateStatus={showUpdateStatus}
                       />
                     </td>
                   </tr>

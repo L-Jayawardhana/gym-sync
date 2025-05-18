@@ -23,7 +23,8 @@ const MobileTicketCard = ({
   loading,
   resetFilters,
   formatDate,
-  getTicketId
+  getTicketId,
+  showUpdateStatus = false
 }) => {
   return (
     <div className="md:hidden p-4">
@@ -80,6 +81,53 @@ const MobileTicketCard = ({
 
               {expandedTicket === getTicketId(ticket) && (
                 <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
+                  
+                  {/* Status Update UI - Only shown when showUpdateStatus is true */}
+                  {showUpdateStatus && (
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <label className="block text-xs font-medium text-gray-700 mb-2">Update Status</label>
+                      <div className="flex flex-col gap-2">
+                        <select
+                          onChange={(e) => handleStatusChange(getTicketId(ticket), e.target.value)}
+                          className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-rose-500 focus:border-rose-500 block w-full p-2.5"
+                          value={selectedStatuses[getTicketId(ticket)] || ""}
+                        >
+                          <option value="" disabled>Select Status</option>
+                          <option value="OPEN">Open</option>
+                          <option value="IN_PROGRESS">In Progress</option>
+                          <option value="RESOLVED">Resolved</option>
+                          <option value="CLOSED">Closed</option>
+                        </select>
+                        <button
+                          onClick={() => handleUpdateStatus(getTicketId(ticket))}
+                          className={`w-full px-4 py-2 text-white rounded-lg text-sm ${
+                            !selectedStatuses[getTicketId(ticket)] || loading
+                              ? 'bg-gray-400 cursor-not-allowed'
+                              : 'bg-blue-600 hover:bg-blue-700'
+                          } transition-colors flex items-center justify-center`}
+                          disabled={!selectedStatuses[getTicketId(ticket)] || loading}
+                        >
+                          {loading ? (
+                            <>
+                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Updating...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"></path>
+                              </svg>
+                              Update Status
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="bg-gray-50 p-3 rounded-lg">
                     <label className="block text-xs font-medium text-gray-700 mb-2">Assign Ticket</label>
                     <div className="flex">
@@ -102,29 +150,7 @@ const MobileTicketCard = ({
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <label className="block text-xs font-medium text-gray-700 mb-2">Update Status</label>
-                    <div className="flex">
-                      <select
-                        onChange={(e) => handleStatusChange(getTicketId(ticket), e.target.value)}
-                        className="bg-white border border-gray-300 text-gray-900 text-sm rounded-l-lg focus:ring-rose-500 focus:border-rose-500 block w-full p-2.5"
-                        value={selectedStatuses[getTicketId(ticket)] || ""}
-                      >
-                        <option value="" disabled>Select Status</option>
-                        <option value="OPEN">Open</option>
-                        <option value="IN_PROGRESS">In Progress</option>
-                        <option value="RESOLVED">Resolved</option>
-                        <option value="CLOSED">Closed</option>
-                      </select>
-                      <button
-                        onClick={() => handleUpdateStatus(getTicketId(ticket))}
-                        className="bg-blue-600 text-white rounded-r-lg px-3 py-2 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors"
-                        disabled={!selectedStatuses[getTicketId(ticket)] || loading}
-                      >
-                        {loading ? 'Loading...' : 'Update'}
-                      </button>
-                    </div>
-                  </div>
+                  
                 </div>
               )}
             </div>

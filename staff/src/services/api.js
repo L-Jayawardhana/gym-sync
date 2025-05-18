@@ -82,3 +82,4 @@ export const getTrainersByRole = async () => {
   return axios.get(`${BASE_URL}/api/staff?role=TRAINER`)
 }
 export * from './ticketApi';
+export * from './equipmentApi';

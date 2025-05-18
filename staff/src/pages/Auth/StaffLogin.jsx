@@ -146,12 +146,6 @@ const AdminLogin = () => {
                     Remember me
                   </label>
                 </div>
-
-                <div className="text-xs sm:text-sm">
-                  <Link to="/forgot-password" className="font-medium text-rose-600 hover:text-rose-500">
-                    Forgot password?
-                  </Link>
-                </div>
               </div>
 
               <div className="pt-4">

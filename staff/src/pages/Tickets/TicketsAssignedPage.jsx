@@ -1,15 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { searchTicketsByStaffId } from '../../services/ticketApi';
+import { searchTicketsByStaffId, updateTicketStatus } from '../../services/ticketApi';
 import TicketTable from '../../components/TicketList/TicketTable';
 import MobileTicketCard from '../../components/TicketList/MobileTicketCard';
+import Modal from '../../components/Modal';
+import StatusChangePreview from '../../components/TicketList/StatusChangePreview';
 
 const TicketsAssignedPage = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);  const [expandedTicket, setExpandedTicket] = useState(null);
-
-  const selectedStatuses = {};
-  const handleStatusChange = () => {};
+  const [error, setError] = useState(null);  
+  const [expandedTicket, setExpandedTicket] = useState(null);
+  const [selectedStatuses, setSelectedStatuses] = useState({});
+  const [updating, setUpdating] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState(null);
+  
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalAction, setModalAction] = useState(null);
+  const [modalConfirmText, setModalConfirmText] = useState('Confirm');
+  const [modalType, setModalType] = useState('info');
 
   // Get user info from localStorage (similar to AppointmentList approach)
   useEffect(() => {
@@ -75,6 +86,72 @@ const TicketsAssignedPage = () => {
   };
 
   const getTicketId = (ticket) => ticket.id || ticket.ticketId;
+  
+  const handleStatusChange = (ticketId, status) => {
+    setSelectedStatuses(prev => ({
+      ...prev,
+      [ticketId]: status
+    }));
+  };
+  
+  const showConfirmationModal = (title, message, action, confirmText = 'Confirm', type = 'warning') => {
+    setModalTitle(title);
+    setModalMessage(message);
+    setModalAction(() => action);
+    setModalConfirmText(confirmText);
+    setModalType(type);
+    setModalOpen(true);
+  };
+  
+  const handleUpdateStatus = async (ticketId) => {
+    const newStatus = selectedStatuses[ticketId];
+    if (!newStatus) return;
+    
+    showConfirmationModal(
+      'Confirm Status Update',
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">Are you sure you want to update the status of ticket #{ticketId} to {newStatus.replace(/_/g, " ")}?</p>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <StatusChangePreview currentStatus={newStatus} />
+        </div>
+      </div>,
+      async () => {
+        try {
+          setUpdating(true);
+          await updateTicketStatus(ticketId, newStatus);
+          
+          // Update local state to reflect the change
+          setTickets(tickets.map(ticket => 
+            getTicketId(ticket) === ticketId 
+              ? { ...ticket, status: newStatus }
+              : ticket
+          ));
+          
+          setModalOpen(false);
+          setUpdateSuccess(`Ticket #${ticketId} status updated to ${newStatus.replace('_', ' ')}`);
+          
+          // Clear success message after 3 seconds
+          setTimeout(() => {
+            setUpdateSuccess(null);
+          }, 3000);
+          
+        } catch (err) {
+          console.error('Error updating ticket status:', err);
+          setModalOpen(false);
+          setError(`Failed to update ticket status. ${err.response?.data?.message || err.message || 'Please try again later.'}`);
+          
+          // Clear error message after 3 seconds
+          setTimeout(() => {
+            setError(null);
+          }, 3000);
+        } finally {
+          setUpdating(false);
+        }
+      },
+      'Update Status',
+      'warning'
+    );
+  };
 
   const staffName = tickets.length > 0 ? tickets[0].assignedToName : localStorage.getItem('userName') || 'your';
   
@@ -98,9 +175,19 @@ const TicketsAssignedPage = () => {
               <svg className="w-5 h-5 text-red opacity-80 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
               </svg>
-              <span className="text-red font-medium">Total: {tickets?.length || 0} tickets</span>
+              <span className="text-reed font-medium">Total: {tickets?.length || 0} tickets</span>
             </div>
           </div>
+
+          {/* Success Message */}
+          {updateSuccess && (
+            <div className="mb-6 text-green-600 p-4 bg-green-50 border-l-4 border-green-600 rounded-md flex items-start mx-4 my-4">
+              <svg className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span>{updateSuccess}</span>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (
@@ -147,28 +234,34 @@ const TicketsAssignedPage = () => {
                 </div>
               </div>
 
-              {/* Desktop Table View  */}              <TicketTable
+              {/* Desktop Table View */}
+              <TicketTable
                 tickets={tickets}
                 expandedTicket={expandedTicket}
                 setExpandedTicket={setExpandedTicket}
                 handleStatusChange={handleStatusChange}
+                handleUpdateStatus={handleUpdateStatus}
                 selectedStatuses={selectedStatuses}
-                loading={loading}
+                loading={updating} // Pass the updating state instead of loading
                 formatDate={formatDate}
                 getTicketId={getTicketId}
-                isReadOnly={true}
+                isReadOnly={false}
+                showUpdateStatus={true} // New prop to indicate status updates should be shown
               />
 
-              {/* Mobile Card View*/}              <MobileTicketCard
+              {/* Mobile Ticket Card View*/}
+              <MobileTicketCard
                 tickets={tickets}
                 expandedTicket={expandedTicket}
                 setExpandedTicket={setExpandedTicket}
                 handleStatusChange={handleStatusChange}
+                handleUpdateStatus={handleUpdateStatus}
                 selectedStatuses={selectedStatuses}
-                loading={loading}
+                loading={updating} // Pass the updating state instead of loading
                 formatDate={formatDate}
                 getTicketId={getTicketId}
-                isReadOnly={true} 
+                isReadOnly={false}
+                showUpdateStatus={true} // New prop to indicate status updates should be shown
               />
             </>
           )}
@@ -189,6 +282,19 @@ const TicketsAssignedPage = () => {
           )}
         </div>
       </div>
+
+      {/* Modal */}
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onConfirm={modalAction}
+        title={modalTitle}
+        message={modalMessage}
+        confirmText={modalConfirmText}
+        type={modalType}
+        size="md"
+        showCancel={true}
+      />
     </div>
   );
 };

@@ -140,11 +140,11 @@ public class StaffService {
     public Staff authenticateStaff(String nic, String password) {
         Staff staff = staffRepository.findById(nic)
                 .orElseThrow(() -> new RuntimeException("Invalid NIC or password"));
-                
+
         if (!BCrypt.checkpw(password, staff.getPassword())) {
             throw new RuntimeException("Invalid NIC or password");
         }
-        
+
         return staff;
     }
 }

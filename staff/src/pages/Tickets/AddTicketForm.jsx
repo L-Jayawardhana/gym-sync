@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { addTicket } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,9 @@ import FormButtons from '../../components/AddTicket/FormButtons';
 
 const AddTicketFormPage = () => {
   const navigate = useNavigate();
+  const [currentStaffId, setCurrentStaffId] = useState('');
+  
+  // Initialize ticket data with empty values
   const [ticketData, setTicketData] = useState({
     type: '',
     description: '',
@@ -21,6 +24,24 @@ const AddTicketFormPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  
+  useEffect(() => {
+    // Get the logged-in staff ID from localStorage
+    const staffId = localStorage.getItem('userId');
+    
+    if (!staffId) {
+      setError('You must be logged in to create a ticket');
+      return;
+    }
+    
+    setCurrentStaffId(staffId);
+    
+    // Update the ticket data with the staff ID
+    setTicketData(prevData => ({
+      ...prevData,
+      staffId: staffId
+    }));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,8 +51,7 @@ const AddTicketFormPage = () => {
     try {
       const dataToSubmit = {
         ...ticketData,
-        staffId: ticketData.assigneeType === 'STAFF' && ticketData.staffId ? 
-                 parseInt(ticketData.staffId, 10) : null,
+        staffId: currentStaffId ? parseInt(currentStaffId, 10) : null,
         memberId: ticketData.assigneeType === 'MEMBER' && ticketData.memberId ? 
                 parseInt(ticketData.memberId, 10) : null,
         assigneeType: ticketData.assigneeType
@@ -43,7 +63,7 @@ const AddTicketFormPage = () => {
         type: '', 
         description: '', 
         priority: 'MEDIUM', 
-        staffId: '',
+        staffId: currentStaffId,
         memberId: '',
         assigneeType: 'STAFF' 
       });

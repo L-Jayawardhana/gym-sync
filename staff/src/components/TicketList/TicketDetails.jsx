@@ -16,10 +16,12 @@ const getAssignedToInfo = (ticket) => {
 const TicketDetails = ({ 
   ticket, 
   handleStatusChange, 
+  handleUpdateStatus,
   selectedStatuses, 
   loading,
   getTicketId,
-  formatDate
+  formatDate,
+  showUpdateStatus = false // New prop with default false
 }) => {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [localStatus, setLocalStatus] = useState("");
@@ -113,11 +115,61 @@ const TicketDetails = ({
             </p>
           </div>
 
-            {/* Status Progress Visualization */}
+          {/* Status Progress Visualization */}
           <div className="mt-4 pt-3 border-t border-gray-100">
             <h5 className="text-sm font-semibold text-gray-700 mb-2">Status Progress:</h5>
             <StatusChangePreview currentStatus={ticket.status} />
           </div>
+
+          {/* Status Update UI - Only shown when showUpdateStatus is true */}
+          {showUpdateStatus && (
+            <div className="mt-4 pt-3 border-t border-gray-100">
+              <h5 className="text-sm font-semibold text-gray-700 mb-2">Update Status:</h5>
+              <div className="space-y-3">
+                <div>
+                  <select
+                    id={`status-select-${getTicketId(ticket)}`}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-rose-300 focus:ring focus:ring-rose-200 focus:ring-opacity-50 text-sm"
+                    value={selectedStatuses[getTicketId(ticket)] || ""}
+                    onChange={onStatusChange}
+                    disabled={loading}
+                  >
+                    <option value="" disabled>Select a status</option>
+                    <option value="IN_PROGRESS">IN PROGRESS</option>
+                    <option value="RESOLVED">RESOLVED</option>
+                    <option value="CLOSED">CLOSED</option>
+                  </select>
+                </div>
+                
+                <button
+                  onClick={() => handleUpdateStatus(getTicketId(ticket))}
+                  disabled={!selectedStatuses[getTicketId(ticket)] || loading}
+                  className={`w-full px-4 py-2 rounded-lg text-white text-sm font-medium ${
+                    !selectedStatuses[getTicketId(ticket)] || loading
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300'
+                  } transition-colors flex items-center justify-center`}
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"></path>
+                      </svg>
+                      Update Status
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
