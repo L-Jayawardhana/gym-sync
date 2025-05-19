@@ -28,6 +28,14 @@ public class Staff {
     @PastOrPresent(message = "Start date cannot be in the future")
     private LocalDate startDate;
 
+    public enum Role {
+        TRAINER,
+        RECEPTIONIST,
+        CLEANING_STAFF,
+        MANAGER,
+
+    }
+
     // For trainers only
     private String shift; // like "morning", "evening", etc.
 

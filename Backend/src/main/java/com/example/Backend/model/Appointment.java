@@ -1,13 +1,6 @@
 package com.example.Backend.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
@@ -18,19 +11,19 @@ public class Appointment {
 
     @NotNull(message = "Trainer must not be null")
     @ManyToOne
-    @JoinColumn(name = "trainer_id", nullable = false)
+    @JoinColumn(name = "trainer_id", nullable = true)
     private Staff trainer;
 
     @ManyToOne
     @JoinColumn(name = "trainee_id", nullable = true)
-    private Staff trainee;
+    private Member trainee;
 
     @NotNull(message = "Status must not be null")
     @Enumerated(EnumType.STRING)
     private Status status;
 
     public enum Status {
-        PENDING, ACCEPTED, REJECTED
+        PENDING, ACCEPTED, REJECTED, COMPLETED
     }
 
     // Default constructor
@@ -38,7 +31,7 @@ public class Appointment {
     }
 
     // Parameterized constructor
-    public Appointment(Long id, Staff trainer, Staff trainee, Status status) {
+    public Appointment(Long id, Staff trainer, Member trainee, Status status) {
         this.id = id;
         this.trainer = trainer;
         this.trainee = trainee;
@@ -62,11 +55,11 @@ public class Appointment {
         this.trainer = trainer;
     }
 
-    public Staff getTrainee() {
+    public Member getTrainee() {
         return trainee;
     }
 
-    public void setTrainee(Staff trainee) {
+    public void setTrainee(Member trainee) {
         this.trainee = trainee;
     }
 
