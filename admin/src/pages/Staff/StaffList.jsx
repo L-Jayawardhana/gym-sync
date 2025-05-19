@@ -136,16 +136,16 @@ const StaffList = () => {
 
   const handleConfirmDelete = async () => {
     if (!staffToDelete) return
-    
+
     try {
       setLoading(true)
       await deleteStaff(staffToDelete.nic)
-      
-      // Remove the deleted staff from the lists
-      const updatedStaff = staff.filter(member => member.nic !== staffToDelete.nic)
+
+      // Update the staff list after deletion
+      const updatedStaff = staff.filter((member) => member.nic !== staffToDelete.nic)
       setStaff(updatedStaff)
       setDisplayStaff(updatedStaff)
-      
+
       setShowDeleteModal(false)
       setStaffToDelete(null)
     } catch (error) {
@@ -410,7 +410,7 @@ const StaffList = () => {
                       <td className="px-6 py-4">{member.startDate}</td>
                       <td className="px-6 py-4 flex space-x-2">
                         <Link
-                          to={`/staff/update-staff/${member.nic}`}
+                          to={`/update-staff/${member.nic}`}
                           className="px-4 py-2 bg-rose-600 text-white rounded-lg inline-flex items-center hover:bg-rose-700 transition-colors shadow-sm hover:shadow transform hover:scale-105"
                         >
                           <svg
