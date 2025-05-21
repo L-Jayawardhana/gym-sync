@@ -79,11 +79,6 @@ public class StaffController {
         return staffService.updateShift(NIC, newShift);
     }
 
-    @PutMapping("updateEmail/{NIC}")
-    public Staff updateEmail(@PathVariable String NIC, @RequestParam String newEmail) {
-        return staffService.updateEmail(NIC, newEmail);
-    }
-
     @PutMapping("/{NIC}")
     public Staff updateStaff(@PathVariable String NIC, @Valid @RequestBody Staff updatedStaff) {
         System.out.println("Received update request for NIC: " + NIC);

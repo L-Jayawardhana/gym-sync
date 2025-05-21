@@ -106,7 +106,7 @@ public class StaffService {
         existingStaff.setName(updatedStaff.getName());
         existingStaff.setPhone(updatedStaff.getPhone());
         existingStaff.setRole(updatedStaff.getRole());
-
+        existingStaff.setEmail(updatedStaff.getEmail());
         // Only update startDate if it's provided
         if (updatedStaff.getStartDate() != null) {
             existingStaff.setStartDate(updatedStaff.getStartDate());
